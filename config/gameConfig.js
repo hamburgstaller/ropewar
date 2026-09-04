@@ -45,6 +45,15 @@ module.exports = {
   },
   BOT_DEFAULT_DIFFICULTY: 'normal',
 
+  // === AVATAR / ARENA LAYOUT ===
+  // Visual half-extent of the arena as a fraction (rope's effective travel).
+  // The rope range is [-1, +1] in normalized space; the win condition is when
+  // the rope's inner endpoint crosses the center line, which corresponds to
+  // |ropePos / ROPE_MAX| reaching 1.
+  AVATAR_SIZE_PX: 56,         // Diameter of each player avatar circle
+  AVATAR_GAP_PX: 12,          // Vertical spacing between avatars in a stack
+  AVATAR_EDGE_PADDING_PCT: 6, // Distance from arena edge to outermost avatar (in %)
+
   // === LEADERBOARD ===
   LEADERBOARD_DEFAULT_LIMIT: 100,
   LEADERBOARD_MAX_LIMIT: 500,

@@ -83,6 +83,7 @@ export async function renderResults(params, query, state) {
       <div class="card results-card">
         <div class="winner-banner ${winnerClass}">${winnerText}</div>
         <p style="color: var(--text-dim);">${escapeHtml(resultData.mode || '')} - ${Math.round(resultData.durationSec)} seconds</p>
+        ${resultData.isBotMatch ? `<div class="bot-warning">🤖 Bot maçı — Rank puanı kaydedilmedi</div>` : ''}
 
         ${myResult ? `
           <div class="results-stats">

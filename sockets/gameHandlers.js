@@ -67,6 +67,40 @@ function registerGameHandlers(io, socket) {
     gameService.handleClick(matchId, userId);
   });
 
+  // Player signals they are ready to start the countdown (game page loaded)
+  socket.on('client:match_ready', (payload) => {
+    console.log('[gameHandler] client:match_ready received', { userId, payload });
+    const { matchId } = payload || {};
+    if (!matchId) {
+      console.log('[gameHandler] No matchId in ready payload');
+      return;
+    }
+
+    const match = gameService.getActiveMatch(matchId);
+    console.log('[gameHandler] Match found?', !!match, 'state:', match?.state);
+    if (!match) return;
+
+    // Mark this player as ready (only humans need to signal)
+    const playerOnTeamA = match.teamA.some(p => p.userId === userId && !p.isBot);
+    const playerOnTeamB = match.teamB.some(p => p.userId === userId && !p.isBot);
+    console.log('[gameHandler] Is human player on A or B?', playerOnTeamA, playerOnTeamB);
+    if (playerOnTeamA || playerOnTeamB) {
+      match.readyPlayers.add(userId);
+
+      // Check if all human players are ready
+      const totalHumans = [...match.teamA, ...match.teamB].filter(p => !p.isBot).length;
+      const readyHumans = match.readyPlayers.size;
+
+      logger.info('Player ready', { userId, matchId, ready: readyHumans, total: totalHumans });
+
+      if (readyHumans >= totalHumans) {
+        // All humans ready, start countdown
+        console.log('[gameHandler] Starting countdown for match', matchId);
+        gameService._startCountdown(match);
+      }
+    }
+  });
+
   // Leave match (currently only logs)
   socket.on('client:leave_match', (payload) => {
     const { matchId } = payload || {};

@@ -127,79 +127,144 @@
   overflow: hidden;
   margin-bottom: 16px;
 }
-.arena::before, .arena::after {
-  /* Win lines (left = A's win limit, right = B's) */
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 6px;
-  z-index: 3;
-}
-.arena::before {
-  left: 12%;
-  background: repeating-linear-gradient(
-    45deg,
-    var(--team-a),
-    var(--team-a) 8px,
-    rgba(231, 76, 60, 0.3) 8px,
-    rgba(231, 76, 60, 0.3) 16px
-  );
-  box-shadow: 0 0 12px rgba(231, 76, 60, 0.5);
-}
-.arena::after {
-  right: 12%;
-  background: repeating-linear-gradient(
-    -45deg,
-    var(--team-b),
-    var(--team-b) 8px,
-    rgba(52, 152, 219, 0.3) 8px,
-    rgba(52, 152, 219, 0.3) 16px
-  );
-  box-shadow: 0 0 12px rgba(52, 152, 219, 0.5);
-}
-.arena-center {
+/* Taller arena for 5v5 — five avatars (56px) + four gaps (12px) = 328px. */
+.arena.arena-5v5 { height: 360px; }
+.arena.arena-3v3 { height: 240px; }
+
+/* Center line is the WIN line — when the rope (anchored to the inner
+   avatar) crosses this line, the opposing team wins. The old side win-lines
+   at 12% from the edges are gone; only the center line marks the threshold. */
+.arena-center-line {
   position: absolute;
   top: 0;
   bottom: 0;
   left: 50%;
-  width: 2px;
-  background: var(--border);
-  z-index: 1;
+  width: 4px;
+  margin-left: -2px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(255, 215, 0, 0.85) 12%,
+    rgba(255, 215, 0, 0.85) 88%,
+    transparent 100%
+  );
+  z-index: 4;
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
+  pointer-events: none;
+}
+.arena-center-line::after {
+  content: 'CENTER';
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+  color: rgba(255, 215, 0, 0.9);
+  font-weight: 700;
+  white-space: nowrap;
 }
 
+/* Player avatars are stacked vertically on each side. They are children of
+   .arena, so we use absolute positioning. The X is computed by JS based on
+   the rope position. The Y is set once at render time (centered in arena). */
+.player-avatar {
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: #0a0d12;
+  z-index: 5;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s;
+  user-select: none;
+}
+.player-avatar.team-A {
+  background: radial-gradient(circle at 30% 30%, #6dd5f5, #277da1);
+  border: 3px solid #4cc9f0;
+  color: white;
+  box-shadow: 0 4px 12px rgba(76, 201, 240, 0.35);
+}
+.player-avatar.team-B {
+  background: radial-gradient(circle at 30% 30%, #ffb347, #c75c00);
+  border: 3px solid #f77f00;
+  color: white;
+  box-shadow: 0 4px 12px rgba(247, 127, 0, 0.35);
+}
+.player-avatar.is-bot::after {
+  content: '🤖';
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  font-size: 0.85rem;
+  background: var(--bg-elevated);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bg-card);
+}
+.player-avatar.is-me {
+  outline: 3px solid #FFD700;
+  outline-offset: 3px;
+}
+.player-avatar.pulling {
+  /* Subtle lean animation when this team is currently winning the click race */
+  filter: brightness(1.15);
+}
+.player-avatar-name {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  white-space: nowrap;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The rope segment is anchored between the inner avatar of each team. JS
+   sets `left` and `width` (and `right`/etc.) inline on every tick. */
 .rope {
   position: absolute;
   top: 50%;
-  left: 0;
-  right: 0;
-  height: 8px;
+  height: 10px;
   background: linear-gradient(90deg, var(--team-a) 0%, #888 50%, var(--team-b) 100%);
   transform: translateY(-50%);
+  z-index: 3;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  /* Width/position set inline by JS to follow the inner avatars. */
+  transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.rope-flag {
+
+/* Rope knot — a small marker at the rope's center. Same translate pattern
+   as the old rope-flag, but the rope itself now stretches between avatars. */
+.rope-knot {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 24px;
-  height: 48px;
-  background: linear-gradient(180deg, #f1c40f 0%, #e67e22 100%);
-  border-radius: 4px;
+  width: 18px;
+  height: 18px;
+  background: radial-gradient(circle, #f1c40f, #e67e22);
+  border-radius: 50%;
   transform: translate(-50%, -50%);
-  z-index: 2;
-  box-shadow: 0 0 20px rgba(241, 196, 15, 0.5);
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 4;
+  box-shadow: 0 0 10px rgba(241, 196, 15, 0.7);
+  pointer-events: none;
 }
-.rope-flag::before {
-  content: '🚩';
-  position: absolute;
-  top: -28px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 24px;
-}
-
-.rope-animating { transition: transform 0.5s ease-out; }
 
 /* === CLICK BUTTON === */
 .click-area {
@@ -294,6 +359,20 @@
   font-size: 1.5rem;
   color: var(--text);
   margin-top: 24px;
+}
+
+/* === BOT WARNING === */
+.bot-warning {
+  background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+  color: #fff;
+  text-align: center;
+  padding: 12px 16px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border-radius: 8px;
+  margin: 0 auto 16px;
+  max-width: 600px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
 
 /* === RESULTS === */

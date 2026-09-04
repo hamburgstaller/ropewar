@@ -17,9 +17,12 @@ function setIo(io) { ioRef = io; }
 
 router.post('/bot', requireAuth, (req, res) => {
   try {
-    const { mode } = req.body;
+    const { mode, difficulty } = req.body;
     if (!['1v1', '3v3', '5v5'].includes(mode)) {
       return res.status(400).json({ error: 'Invalid mode' });
+    }
+    if (difficulty && !['easy', 'normal', 'hard'].includes(difficulty)) {
+      return res.status(400).json({ error: 'Invalid difficulty' });
     }
     if (!ioRef) {
       return res.status(500).json({ error: 'Socket.io is not ready yet' });
@@ -39,7 +42,7 @@ router.post('/bot', requireAuth, (req, res) => {
     // Create the match as a pending match even if no socket is connected.
     // When the player connects, the game handler will auto-resume.
     const match = matchmakingService.createBotMatch(
-      userId, username, actualSocketId, mode, ioRef
+      userId, username, actualSocketId, mode, ioRef, difficulty
     );
 
     res.json({ matchId: match.id });

@@ -189,9 +189,10 @@ const matchmakingService = {
    * Instantly play against a bot (for local testing).
    * Works even if the socket is not connected; a pending match is created.
    * The player auto-resumes when their socket connects (via gameHandlers).
+   * @param {string} difficulty - bot difficulty: 'easy' | 'normal' | 'hard'
    * @returns {object} the created match
    */
-  createBotMatch(userId, username, socketId, mode, io) {
+  createBotMatch(userId, username, socketId, mode, io, difficulty) {
     if (!cfg.VALID_MODES.includes(mode)) {
       throw new Error('Invalid mode');
     }
@@ -203,12 +204,14 @@ const matchmakingService = {
     const oppTeam = humanTeam === 'A' ? 'B' : 'A';
 
     const humanTeamArr = [{ userId, username, socketId: socketId || null, team: humanTeam, isBot: false }];
-    const oppTeamArr = botService.createTeam(teamSize, oppTeam);
+    // Use the selected difficulty for all bots in the match
+    const botDiff = difficulty || cfg.BOT_DEFAULT_DIFFICULTY;
+    const oppTeamArr = botService.createTeam(teamSize, oppTeam, botDiff);
 
     // Fill the human's team with bots too
     const fillerTeam = humanTeam === 'A'
-      ? botService.createTeam(teamSize - 1, 'A')
-      : botService.createTeam(teamSize - 1, 'B');
+      ? botService.createTeam(teamSize - 1, 'A', botDiff)
+      : botService.createTeam(teamSize - 1, 'B', botDiff);
 
     const teamA = humanTeam === 'A'
       ? [...humanTeamArr, ...fillerTeam]
@@ -218,6 +221,7 @@ const matchmakingService = {
       : [...humanTeamArr, ...fillerTeam];
 
     const match = gameService.createMatch({ mode, teamA, teamB, io });
+    match.isBotMatch = true;
 
     // Notify directly if socket is connected
     if (socketId) {
@@ -234,7 +238,7 @@ const matchmakingService = {
       }
     }
 
-    logger.info('Bot match created', { matchId: match.id, mode, humanTeam, socketProvided: !!socketId });
+    logger.info('Bot match created', { matchId: match.id, mode, humanTeam, difficulty: botDiff, socketProvided: !!socketId });
 
     return match;
   },

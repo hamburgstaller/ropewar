@@ -42,7 +42,7 @@ const gameService = {
       teamSize: config.teamSize,
       teamA,
       teamB,
-      state: 'countdown',     // countdown -> active -> ended
+      state: 'pending_ready',   // pending_ready -> countdown -> active -> ended
       stateSince: Date.now(),
       ropePos: 0,
       ropeMax: cfg.ROPE_MAX,
@@ -56,6 +56,8 @@ const gameService = {
       countdownRemaining: cfg.COUNTDOWN_SEC,
       // Per-player click count for the current second (for rate limiting)
       perPlayerClicks: new Map(),
+      // Ready olan insan oyuncuların userId'leri — hepsi ready olunca countdown başlar
+      readyPlayers: new Set(),
       io
     };
 
@@ -76,26 +78,40 @@ const gameService = {
       }
     }
 
-    this._startCountdown(match);
+    // Countdown'u HEMEN başlatma — istemciler sayfayı yükleyip "ready"
+    // sinyali gönderene kadar bekle. Böylece "3" tüm oyuncular tarafından
+    // kesin olarak görülür.
     return match;
   },
 
   _startCountdown(match) {
+    // Eğer zaten bir interval varsa temizle (sayfa yenileme/çift tetikleme)
+    if (match.countInterval) {
+      clearInterval(match.countInterval);
+      match.countInterval = null;
+    }
+
     const room = `match:${match.id}`;
     match.state = 'countdown';
     match.countdownRemaining = cfg.COUNTDOWN_SEC;
+    // Countdown bitiş zamanını hesapla
+    match.countdownEndsAt = Date.now() + cfg.COUNTDOWN_SEC * 1000;
     match.stateSince = Date.now();
-    match.io.to(room).emit('server:countdown', {
-      matchId: match.id,
-      secondsRemaining: match.countdownRemaining
-    });
 
-    match.countInterval = setInterval(() => {
-      match.countdownRemaining--;
+    // İlk emit'i gönder ("3")
+    const emitCountdown = (value) => {
       match.io.to(room).emit('server:countdown', {
         matchId: match.id,
-        secondsRemaining: match.countdownRemaining
+        secondsRemaining: value,
+        countdownEndsAt: match.countdownEndsAt
       });
+    };
+    emitCountdown(match.countdownRemaining);
+
+    // Her 1 saniyede bir decrement + emit. "3" emit edildikten tam 1 sn sonra "2" emit edilir.
+    match.countInterval = setInterval(() => {
+      match.countdownRemaining--;
+      emitCountdown(match.countdownRemaining);
       if (match.countdownRemaining <= 0) {
         clearInterval(match.countInterval);
         match.countInterval = null;
@@ -118,7 +134,8 @@ const gameService = {
       mode: match.mode,
       teamA: this._publicTeam(match.teamA),
       teamB: this._publicTeam(match.teamB),
-      durationSec: cfg.MATCH_MAX_SEC
+      durationSec: cfg.MATCH_MAX_SEC,
+      isBotMatch: !!match.isBotMatch
     });
 
     logger.info('Match started', { matchId: match.id });
@@ -237,37 +254,42 @@ const gameService = {
 
     const durationSec = (match.stateSince - match.startTime) / 1000;
 
-    // Calculate MMR
-    const userMmrMap = {};
-    for (const p of [...match.teamA, ...match.teamB]) {
-      if (!p.isBot) {
-        const u = userModel.findById(p.userId);
-        if (u) userMmrMap[p.userId] = u.mmr;
+    // Calculate MMR — skip for bot matches
+    let mmrResults = [];
+    if (!match.isBotMatch) {
+      const userMmrMap = {};
+      for (const p of [...match.teamA, ...match.teamB]) {
+        if (!p.isBot) {
+          const u = userModel.findById(p.userId);
+          if (u) userMmrMap[p.userId] = u.mmr;
+        }
       }
-    }
-    const mmrResults = mmrService.applyMatchResult({
-      teamA: match.teamA,
-      teamB: match.teamB,
-      winnerTeam,
-      userMmrMap
-    });
+      mmrResults = mmrService.applyMatchResult({
+        teamA: match.teamA,
+        teamB: match.teamB,
+        winnerTeam,
+        userMmrMap
+      });
 
-    // Update DB (transaction)
-    const tx = db.transaction((results) => {
-      for (const r of results) {
-        userModel.applyMatchResult(db, {
-          userId: r.userId,
-          mmrDelta: r.mmrDelta,
-          won: r.won,
-          newTier: r.rankAfter,
-          newMmr: r.mmrAfter
-        });
+      // Update DB (transaction)
+      const tx = db.transaction((results) => {
+        for (const r of results) {
+          userModel.applyMatchResult(db, {
+            userId: r.userId,
+            mmrDelta: r.mmrDelta,
+            won: r.won,
+            newTier: r.rankAfter,
+            newMmr: r.mmrAfter
+          });
+        }
+      });
+      try {
+        tx(mmrResults);
+      } catch (err) {
+        logger.error('Transaction error', { error: err.message });
       }
-    });
-    try {
-      tx(mmrResults);
-    } catch (err) {
-      logger.error('Transaction error', { error: err.message });
+    } else {
+      logger.info('Bot match ended — skipping MMR update', { matchId: match.id });
     }
 
     // Save to match history
@@ -306,7 +328,8 @@ const gameService = {
       durationSec,
       results: mmrResults,
       teamA: players.filter(p => p.team === 'A'),
-      teamB: players.filter(p => p.team === 'B')
+      teamB: players.filter(p => p.team === 'B'),
+      isBotMatch: !!match.isBotMatch
     });
 
     logger.info('Match ended', { matchId: match.id, winnerTeam, durationSec, players: players.length });
@@ -344,6 +367,13 @@ const gameService = {
       }
     }
     return null;
+  },
+
+  /**
+   * Get an active match by id.
+   */
+  getActiveMatch(matchId) {
+    return activeMatches.get(matchId) || null;
   },
 
   /**

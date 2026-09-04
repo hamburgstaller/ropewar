@@ -42,6 +42,14 @@ export async function renderModeSelect() {
           <button id="btn-bot" class="btn-large btn-secondary">🤖 Play vs Bot Now</button>
           <button id="btn-cancel" class="btn btn-secondary">Cancel</button>
         </div>
+        <div id="bot-difficulty" style="margin-top: 16px; display: none;">
+          <p style="color: var(--text-dim); margin-bottom: 8px;">Bot Difficulty:</p>
+          <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+            <button class="diff-btn" data-diff="easy">😊 Easy</button>
+            <button class="diff-btn" data-diff="normal" selected>😎 Normal</button>
+            <button class="diff-btn" data-diff="hard">😈 Hard</button>
+          </div>
+        </div>
       </div>
     </div>
   `;
@@ -70,13 +78,27 @@ export async function renderModeSelect() {
     router.navigate(`/matchmaking?mode=${selectedMode}`);
   });
 
+  let selectedDifficulty = 'normal';
+
   document.getElementById('btn-bot').addEventListener('click', async () => {
     if (!selectedMode) return;
-    await startBotMatch(selectedMode);
+    await startBotMatch(selectedMode, selectedDifficulty);
   });
+
+  document.querySelectorAll('.diff-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedDifficulty = btn.dataset.diff;
+    });
+  });
+
+  document.getElementById('bot-difficulty').style.display = 'block';
+  // Set initial active state for normal difficulty
+  document.querySelector('.diff-btn[data-diff="normal"]')?.classList.add('active');
 }
 
-async function startBotMatch(mode) {
+async function startBotMatch(mode, difficulty = 'normal') {
   try {
     // Force the socket connection and capture the socketId
     socketService.connect();
@@ -94,8 +116,14 @@ async function startBotMatch(mode) {
       return;
     }
 
-    const result = await api.createBotMatch(mode, socketId);
-    showToast('Starting bot match...', 'success');
+    // Check if this is a bot-only match (no humans beyond the player)
+    // Show warning that rank will not be updated
+    if (!confirm('Bot maçı: Rank puanı kaydedilmez. Devam etmek istiyor musunuz?')) {
+      return;
+    }
+
+    const result = await api.createBotMatch(mode, socketId, difficulty);
+    showToast('Starting bot match...', 'info');
     router.navigate(`/game/${result.matchId}`);
   } catch (err) {
     showToast('Error: ' + err.message, 'error');

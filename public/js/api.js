@@ -39,6 +39,6 @@ export const api = {
     request('GET', `/api/leaderboard?mode=${mode}&limit=${limit}`),
 
   // Match
-  createBotMatch: (mode, socketId) =>
-    request('POST', '/api/match/bot', { mode, socketId })
+  createBotMatch: (mode, socketId, difficulty) =>
+    request('POST', '/api/match/bot', { mode, socketId, difficulty })
 };
