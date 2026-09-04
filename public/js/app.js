@@ -15,6 +15,7 @@ import { renderGame } from './views/game.js';
 import { renderResults } from './views/results.js';
 import { renderProfile } from './views/profile.js';
 import { renderLeaderboard } from './views/leaderboard.js';
+import { renderAbout } from './views/about.js';
 
 const PUBLIC_ROUTES = new Set(['/login', '/register']);
 
@@ -69,6 +70,7 @@ router.register('/game/:matchId', authGuard(renderGame));
 router.register('/results/:matchId', authGuard(renderResults));
 router.register('/profile', authGuard(renderProfile));
 router.register('/leaderboard', authGuard(renderLeaderboard));
+router.register('/about', authGuard(renderAbout));
 
 // === NAVBAR LOGOUT ===
 document.getElementById('nav-logout').addEventListener('click', async (e) => {

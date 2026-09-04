@@ -66,7 +66,13 @@ export async function renderResults(params, query, state) {
   }
 
   const myResult = resultData.results?.find(r => r.userId === myUserId);
-  const won = myResult?.won;
+  // Bot matches have no mmrResults, so derive 'won' from winnerTeam + which team the player was on
+  const won = myResult?.won ?? (() => {
+    if (!resultData.winnerTeam) return false;
+    const myEntry = [...(resultData.teamA || []), ...(resultData.teamB || [])]
+      .find(p => p.userId === myUserId);
+    return myEntry ? myEntry.team === resultData.winnerTeam : false;
+  })();
   const draw = !resultData.winnerTeam;
   const winnerClass = draw ? 'draw' : (won ? 'won' : 'lost');
   const winnerText = draw ? '🤝 Draw'

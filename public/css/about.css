@@ -1,0 +1,235 @@
+/* === ABOUT PAGE === */
+.about-card {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.about-card h1 {
+  text-align: center;
+  margin-bottom: 8px;
+  color: var(--accent);
+}
+
+.about-section {
+  margin-top: 40px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+}
+
+.about-section h2 {
+  color: var(--text);
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+}
+
+/* How to play steps */
+.how-to-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.how-to-step {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.step-number {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  background: var(--accent);
+  color: var(--bg-dark);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+
+.step-content h3 {
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+.step-content p {
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+kbd {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-family: monospace;
+  font-size: 0.9em;
+  color: var(--accent);
+}
+
+/* Game modes grid */
+.modes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.mode-card {
+  background: var(--bg-elevated);
+  padding: 20px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  text-align: center;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.mode-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+}
+
+.mode-card h3 {
+  color: var(--accent);
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+}
+
+.mode-card p {
+  color: var(--text-dim);
+  font-size: 0.95rem;
+}
+
+/* Difficulty badges */
+.difficulty-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.difficulty-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.difficulty-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  min-width: 80px;
+  text-align: center;
+}
+
+.difficulty-badge.easy {
+  background: rgba(6, 214, 160, 0.2);
+  color: #06d6a0;
+  border: 1px solid #06d6a0;
+}
+
+.difficulty-badge.normal {
+  background: rgba(76, 201, 240, 0.2);
+  color: #4cc9f0;
+  border: 1px solid #4cc9f0;
+}
+
+.difficulty-badge.hard {
+  background: rgba(239, 71, 111, 0.2);
+  color: #ef476f;
+  border: 1px solid #ef476f;
+}
+
+.difficulty-item span:last-child {
+  color: var(--text-dim);
+}
+
+/* Changelog */
+.changelog {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.changelog-item {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 16px 20px;
+}
+
+.changelog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.changelog-version {
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 1.1rem;
+}
+
+.changelog-date {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+.changelog-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.changelog-features li {
+  padding: 6px 0 6px 24px;
+  position: relative;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.changelog-features li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--success);
+  font-weight: 700;
+}
+
+/* Links */
+.links-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.link-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.link-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  text-decoration: none;
+}
+
+.link-icon {
+  font-size: 1.5rem;
+}

@@ -31,6 +31,7 @@ Thumbs.db
 # Misc
 *.tmp
 *.bak
+*.bat
 
 # Local tooling / Claude Code config
 settings.json
